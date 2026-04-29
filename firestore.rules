@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (First block)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() 
+        && request.auth.token.email == "outgame954@gmail.com" 
+        && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidMenuItem(data) {
+      return data.keys().hasAll(['name', 'price', 'imageUrl', 'inStock']) 
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && (data.get('description', '') is string && data.get('description', '').size() <= 1000)
+        && data.price is number && data.price >= 0
+        && data.imageUrl is string && data.imageUrl.size() <= 2000
+        && data.inStock is bool;
+    }
+
+    function isValidReview(data) {
+      return data.keys().hasAll(['name', 'rating', 'comment', 'createdAt'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.rating is number && data.rating >= 1 && data.rating <= 5
+        && data.comment is string && data.comment.size() > 0 && data.comment.size() <= 1000
+        && data.createdAt == request.time;
+    }
+
+    // 3. Collection Rules
+    
+    // Config: Publicly readable, Admin writeable
+    match /config/{configId} {
+      allow get: if true;
+      allow list: if true;
+      allow write: if isAdmin();
+    }
+
+    // Menu: Publicly readable, Admin writeable
+    match /menu/{itemId} {
+      allow get: if true;
+      allow list: if true;
+      
+      allow create: if isAdmin() && isValidMenuItem(incoming()) && isValidId(itemId);
+      
+      allow update: if isAdmin() && isValidMenuItem(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasAny(['name', 'description', 'price', 'imageUrl', 'inStock', 'category', 'updatedAt'])
+      );
+      
+      allow delete: if isAdmin();
+    }
+
+    // Reviews: Publicly readable, open for signed-in users to create
+    match /reviews/{reviewId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && isValidReview(incoming()) && isValidId(reviewId);
+      allow delete: if isAdmin();
+    }
+  }
+}

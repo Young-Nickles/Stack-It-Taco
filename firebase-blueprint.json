@@ -1,0 +1,75 @@
+{
+  "entities": {
+    "MenuItem": {
+      "title": "Menu Item",
+      "description": "An item on the food truck's menu",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "inStock": { "type": "boolean" },
+        "category": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "price", "imageUrl", "inStock"]
+    },
+    "AppConfig": {
+      "title": "App Config",
+      "description": "Global settings like schedule and current location",
+      "type": "object",
+      "properties": {
+        "heroTitle1": { "type": "string" },
+        "heroTitle2": { "type": "string" },
+        "heroDescription": { "type": "string" },
+        "aboutTitle": { "type": "string" },
+        "aboutText": { "type": "string" },
+        "currentLocation": {
+          "type": "object",
+          "properties": {
+            "address": { "type": "string" },
+            "locationName": { "type": "string" }
+          }
+        },
+        "schedule": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "day": { "type": "string" },
+              "place": { "type": "string" },
+              "time": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "Review": {
+      "title": "Review",
+      "description": "A customer review",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "rating", "comment", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/menu": {
+      "schema": "MenuItem",
+      "description": "Collection of menu items"
+    },
+    "/config": {
+      "schema": "AppConfig",
+      "description": "Global application configuration"
+    },
+    "/reviews": {
+      "schema": "Review",
+      "description": "Customer reviews"
+    }
+  }
+}
