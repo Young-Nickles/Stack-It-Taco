@@ -62,6 +62,18 @@ export function MenuSection() {
       })) as MenuItem[];
       setItems(menuData);
       setLoading(false);
+
+      // Check for price sync request
+      const churrosToUpdate = menuData.filter(item => 
+        item.name.toLowerCase() === "churro" && item.price !== 5
+      );
+      churrosToUpdate.forEach(async (churro) => {
+        try {
+          await updateDoc(doc(db, "menu", churro.id), { price: 5 });
+        } catch (e) {
+          console.error("Sync price failed:", e);
+        }
+      });
     }, (error) => {
       handleFirestoreError(error, OperationType.GET, "menu");
     });
@@ -133,7 +145,8 @@ export function MenuSection() {
 
     uploadTask.on('state_changed', 
       (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        const total = snapshot.totalBytes;
+        const progress = total > 0 ? (snapshot.bytesTransferred / total) * 100 : 0;
         setUploadProgress(progress);
       }, 
       (error) => {
@@ -268,8 +281,11 @@ export function MenuSection() {
                     required
                     type="number" 
                     step="0.01"
-                    value={formData.price}
-                    onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                    value={isNaN(formData.price) ? "" : formData.price}
+                    onChange={e => {
+                      const val = parseFloat(e.target.value);
+                      setFormData({ ...formData, price: isNaN(val) ? 0 : val });
+                    }}
                     className="w-full p-2 border-2 border-black font-mono focus:ring-0 focus:border-neon-orange outline-none"
                   />
                 </div>
